@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 7: OpenAI-compatible provider.
+Milestone 8: example consumer apps.
 
 ## Current Features
 
@@ -28,6 +28,7 @@ Milestone 7: OpenAI-compatible provider.
 - Provider smoke tests that send a real prompt through `providers smoke`.
 - OpenAI-compatible `/v1/chat/completions` provider support.
 - API key environment variable validation for OpenAI-compatible providers.
+- Runnable consumer examples for plain chat, quiz context, and game context.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
@@ -184,6 +185,23 @@ $env:AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY = "..."
 `providers smoke openai_compatible --prompt "Hello"` sends a real chat completion
 request.
 
+## Example Consumers
+
+These scripts show how non-GUI frontend apps call the backend. They default to the
+configured local Ollama provider:
+
+```bash
+python examples/plain_chatbot.py --message "Hello"
+python examples/quiz_context_demo.py --message "Can you give me a hint?"
+python examples/game_context_demo.py --message "What should I try next?"
+```
+
+Use the mock provider for offline smoke tests:
+
+```bash
+python examples/plain_chatbot.py --provider mock --message "Hello"
+```
+
 ## Tests
 
 ```bash
@@ -192,5 +210,6 @@ pytest
 
 ## Roadmap
 
-Milestone 8 will add example consumer scripts showing plain chatbot, quiz context,
-and game context usage.
+The initial milestone roadmap is complete. Next likely work includes hardening
+configuration overrides, improving provider diagnostics, and adding more consumer
+templates or an HTTP service layer.
