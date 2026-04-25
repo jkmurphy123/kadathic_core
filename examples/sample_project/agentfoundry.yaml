@@ -14,6 +14,12 @@ providers:
     base_url: http://localhost:11434
     model: qwen2.5-coder:7b-instruct
 
+  openai_compatible:
+    type: openai_compatible
+    base_url: https://api.example.test
+    api_key_env: AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY
+    model: example-chat-model
+
 agent_libraries:
   - ../agents
 

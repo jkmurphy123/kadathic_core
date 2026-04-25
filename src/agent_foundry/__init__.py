@@ -14,6 +14,7 @@ __all__ = [
     "ContextManager",
     "MockProvider",
     "OllamaProvider",
+    "OpenAICompatibleProvider",
     "ProjectConfig",
     "ProviderRegistry",
 ]
@@ -62,6 +63,10 @@ def __getattr__(name: str) -> object:
         from agent_foundry.providers.ollama import OllamaProvider
 
         return OllamaProvider
+    if name == "OpenAICompatibleProvider":
+        from agent_foundry.providers.openai_compatible import OpenAICompatibleProvider
+
+        return OpenAICompatibleProvider
     if name == "ProjectConfig":
         from agent_foundry.config.models import ProjectConfig
 

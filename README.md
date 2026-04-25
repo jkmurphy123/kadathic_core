@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 6: Ollama provider.
+Milestone 7: OpenAI-compatible provider.
 
 ## Current Features
 
@@ -26,6 +26,8 @@ Milestone 6: Ollama provider.
 - Ollama `/api/chat` provider support.
 - Graceful Ollama server reachability checks through `providers health`.
 - Provider smoke tests that send a real prompt through `providers smoke`.
+- OpenAI-compatible `/v1/chat/completions` provider support.
+- API key environment variable validation for OpenAI-compatible providers.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
@@ -153,6 +155,35 @@ If Ollama is not running, `providers health` reports an unavailable provider ins
 of crashing. If the server is reachable but the model is missing or cannot generate,
 `providers smoke` fails with the provider error.
 
+## OpenAI-Compatible Provider
+
+Add any `/v1/chat/completions` compatible endpoint to `agentfoundry.yaml`:
+
+```yaml
+providers:
+  openai_compatible:
+    type: openai_compatible
+    base_url: https://api.example.test
+    api_key_env: AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY
+    model: example-chat-model
+```
+
+Set the configured environment variable before using the provider:
+
+```bash
+export AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY="..."
+```
+
+On PowerShell:
+
+```powershell
+$env:AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY = "..."
+```
+
+`providers health` checks that the API key environment variable is present.
+`providers smoke openai_compatible --prompt "Hello"` sends a real chat completion
+request.
+
 ## Tests
 
 ```bash
@@ -161,5 +192,5 @@ pytest
 
 ## Roadmap
 
-Milestone 7 will add an OpenAI-compatible `/v1/chat/completions` provider with API key
-environment handling and mocked HTTP tests.
+Milestone 8 will add example consumer scripts showing plain chatbot, quiz context,
+and game context usage.

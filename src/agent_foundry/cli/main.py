@@ -30,7 +30,7 @@ app.add_typer(agents_app, name="agents")
 app.add_typer(providers_app, name="providers")
 app.add_typer(context_app, name="context")
 app.add_typer(sessions_app, name="sessions")
-console = Console(width=160)
+console = Console(width=220)
 
 
 class CliState:

@@ -7,6 +7,7 @@ from agent_foundry.core.errors import ConfigurationError
 from agent_foundry.providers.base import ProviderAdapter
 from agent_foundry.providers.mock import MockProvider
 from agent_foundry.providers.ollama import OllamaProvider
+from agent_foundry.providers.openai_compatible import OpenAICompatibleProvider
 
 
 class ProviderRegistry:
@@ -63,6 +64,25 @@ def build_provider(provider_id: str, config: ProviderConfig) -> ProviderAdapter:
         return OllamaProvider(
             provider_id=provider_id,
             base_url=config.base_url or "http://localhost:11434",
+            model=config.model,
+        )
+    if config.type == "openai_compatible":
+        if not config.model:
+            raise ConfigurationError(
+                f"OpenAI-compatible provider '{provider_id}' requires a model."
+            )
+        if not config.base_url:
+            raise ConfigurationError(
+                f"OpenAI-compatible provider '{provider_id}' requires a base_url."
+            )
+        if not config.api_key_env:
+            raise ConfigurationError(
+                f"OpenAI-compatible provider '{provider_id}' requires api_key_env."
+            )
+        return OpenAICompatibleProvider(
+            provider_id=provider_id,
+            base_url=config.base_url,
+            api_key_env=config.api_key_env,
             model=config.model,
         )
 
