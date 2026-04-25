@@ -7,13 +7,17 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from agent_foundry.agents.loader import load_agent_config
 from agent_foundry.agents.registry import AgentRegistry
+from agent_foundry.config.loader import load_project_config
+from agent_foundry.config.models import ProjectConfig
 from agent_foundry.core.errors import AgentFoundryError
+from agent_foundry.providers.registry import ProviderRegistry
 
 app = typer.Typer(help="Agent Foundry backend CLI.")
 agents_app = typer.Typer(help="Inspect reusable agents.")
+providers_app = typer.Typer(help="Inspect configured providers.")
 app.add_typer(agents_app, name="agents")
+app.add_typer(providers_app, name="providers")
 console = Console(width=160)
 
 
@@ -43,9 +47,21 @@ def main(
     state.config_path = config
 
 
-def _load_registry() -> AgentRegistry:
-    libraries, enabled_agents = load_agent_config(state.config_path)
-    return AgentRegistry.from_libraries(libraries, enabled_agents=enabled_agents)
+def _load_config() -> ProjectConfig:
+    return load_project_config(state.config_path)
+
+
+def _load_agent_registry() -> AgentRegistry:
+    config = _load_config()
+    enabled_agents = config.enabled_agents or None
+    return AgentRegistry.from_libraries(
+        config.resolved_agent_libraries(),
+        enabled_agents=enabled_agents,
+    )
+
+
+def _load_provider_registry() -> ProviderRegistry:
+    return ProviderRegistry.from_project_config(_load_config())
 
 
 @agents_app.command("list")
@@ -53,7 +69,7 @@ def list_agents() -> None:
     """List enabled agents from the project config."""
 
     try:
-        registry = _load_registry()
+        registry = _load_agent_registry()
     except AgentFoundryError as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc
@@ -75,7 +91,7 @@ def show_agent(agent_id: Annotated[str, typer.Argument(help="Agent id to show.")
     """Show metadata for one agent."""
 
     try:
-        agent = _load_registry().get(agent_id)
+        agent = _load_agent_registry().get(agent_id)
     except AgentFoundryError as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1) from exc
@@ -89,6 +105,55 @@ def show_agent(agent_id: Annotated[str, typer.Argument(help="Agent id to show.")
     console.print(f"Personality file: {agent.personality_file}")
     console.print(f"Source: {agent.source_dir}")
     console.print(f"Personality: {agent.personality_path}")
+
+
+@providers_app.command("list")
+def list_providers() -> None:
+    """List providers from the project config."""
+
+    try:
+        config = _load_config()
+        registry = ProviderRegistry.from_project_config(config)
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(title="Providers")
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Type")
+    table.add_column("Model")
+    table.add_column("Default")
+
+    for provider in registry.list():
+        provider_config = config.providers[provider.id]
+        is_default = "yes" if provider.id == config.default_provider else ""
+        table.add_row(provider.id, provider_config.type, provider_config.model or "", is_default)
+
+    console.print(table)
+
+
+@providers_app.command("health")
+def provider_health() -> None:
+    """Run health checks for configured providers."""
+
+    try:
+        registry = _load_provider_registry()
+        health_results = [provider.health_check() for provider in registry.list()]
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(title="Provider Health")
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Healthy")
+    table.add_column("Model")
+    table.add_column("Message")
+
+    for health in health_results:
+        healthy = "yes" if health.healthy else "no"
+        table.add_row(health.provider_id, healthy, health.model or "", health.message)
+
+    console.print(table)
 
 
 if __name__ == "__main__":

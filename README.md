@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 1: project skeleton and agent loading.
+Milestone 2: project configuration and provider registry.
 
 ## Current Features
 
@@ -12,9 +12,14 @@ Milestone 1: project skeleton and agent loading.
 - Personality markdown loading.
 - In-memory `AgentRegistry`.
 - Sample agents in `examples/agents`.
+- Project config loading from `agentfoundry.yaml`.
+- Provider registry.
+- Deterministic mock provider.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
+  - `agentfoundry providers list`
+  - `agentfoundry providers health`
 
 ## Install
 
@@ -27,6 +32,8 @@ pip install -e ".[dev]"
 ```bash
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents list
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat_companion
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers health
 ```
 
 ## Agent Definition
@@ -47,12 +54,18 @@ temperature: 0.4
 
 ```python
 from agent_foundry import AgentRegistry
+from agent_foundry.config import load_project_config
+from agent_foundry.providers import ProviderRegistry
 
-registry = AgentRegistry.from_libraries(["examples/agents"])
-agent = registry.get("chat_companion")
+config = load_project_config("examples/sample_project/agentfoundry.yaml")
 
+agent_registry = AgentRegistry.from_libraries(config.resolved_agent_libraries())
+agent = agent_registry.get("chat_companion")
 print(agent.name)
-print(agent.personality)
+
+provider_registry = ProviderRegistry.from_project_config(config)
+provider = provider_registry.get(config.default_provider)
+print(provider.health_check().message)
 ```
 
 ## Tests
@@ -63,6 +76,6 @@ pytest
 
 ## Roadmap
 
-Milestone 2 will add project configuration models, provider registry support, and a
-deterministic mock provider. Runtime chat, context capsules, and SQLite memory follow
-in later milestones.
+Milestone 3 will add `AppContext`, context policy models, context capsule assembly,
+and context preview support. Runtime chat and SQLite memory follow in later
+milestones.

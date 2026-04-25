@@ -22,3 +22,5 @@ pip install -e ".[dev]"
 agentfoundry --help
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents list
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat_companion
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers health

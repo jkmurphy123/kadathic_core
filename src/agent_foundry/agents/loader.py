@@ -7,7 +7,8 @@ import yaml
 from pydantic import ValidationError
 
 from agent_foundry.agents.definition import AgentDefinition
-from agent_foundry.core.errors import AgentLoaderError, ConfigurationError
+from agent_foundry.config.loader import load_project_config
+from agent_foundry.core.errors import AgentLoaderError
 
 
 class AgentLoader:
@@ -74,32 +75,8 @@ class AgentLoader:
 
 
 def load_agent_config(path: Path | str) -> tuple[list[Path], list[str] | None]:
-    """Load only the Milestone 1 agent library settings from `agentfoundry.yaml`."""
+    """Load agent library settings from `agentfoundry.yaml`."""
 
-    config_path = Path(path).expanduser().resolve()
-    if not config_path.exists():
-        raise ConfigurationError(f"Project config does not exist: {config_path}")
-
-    try:
-        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    except yaml.YAMLError as exc:
-        raise ConfigurationError(f"Invalid project config YAML in {config_path}: {exc}") from exc
-
-    if not isinstance(data, dict):
-        raise ConfigurationError(f"Project config must be a YAML mapping: {config_path}")
-
-    raw_libraries = data.get("agent_libraries", [])
-    if not isinstance(raw_libraries, list) or not all(
-        isinstance(item, str) for item in raw_libraries
-    ):
-        raise ConfigurationError("`agent_libraries` must be a list of paths.")
-
-    raw_enabled = data.get("enabled_agents")
-    if raw_enabled is not None and (
-        not isinstance(raw_enabled, list) or not all(isinstance(item, str) for item in raw_enabled)
-    ):
-        raise ConfigurationError("`enabled_agents` must be a list of agent ids.")
-
-    base_dir = config_path.parent
-    libraries = [(base_dir / library).resolve() for library in raw_libraries]
-    return libraries, raw_enabled
+    config = load_project_config(path)
+    enabled_agents = config.enabled_agents or None
+    return config.resolved_agent_libraries(), enabled_agents
