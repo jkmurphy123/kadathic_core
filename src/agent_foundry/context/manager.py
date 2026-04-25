@@ -34,16 +34,21 @@ class ContextManager:
         user_id: str,
         user_message: str,
         app_context: AppContext | None = None,
+        recent_messages: list[ProviderMessage] | None = None,
         policy: ContextPolicy | None = None,
     ) -> ContextCapsule:
         """Assemble a `ContextCapsule` for one turn."""
 
         effective_policy = policy or self._policy_from_config(project_config, agent)
+        effective_recent_messages = (recent_messages or [])[
+            -effective_policy.max_recent_messages :
+        ]
         rendered_messages = self._render_messages(
             agent=agent,
             project_config=project_config,
             user_message=user_message,
             app_context=app_context if effective_policy.include_app_context else None,
+            recent_messages=effective_recent_messages,
         )
         effective_project_id = project_id or project_config.project.id
 
@@ -55,6 +60,7 @@ class ContextManager:
             system_instructions=self.system_instructions,
             agent_personality=agent.personality or "",
             project_context=self._render_project_context(project_config),
+            recent_messages=effective_recent_messages,
             app_context=app_context if effective_policy.include_app_context else None,
             current_user_message=user_message,
             rendered_messages=rendered_messages,
@@ -86,6 +92,7 @@ class ContextManager:
         project_config: ProjectConfig,
         user_message: str,
         app_context: AppContext | None,
+        recent_messages: list[ProviderMessage],
     ) -> list[ProviderMessage]:
         system_content = "\n\n".join(
             section
@@ -102,10 +109,10 @@ class ContextManager:
             user_sections.append(render_app_context(app_context))
         user_sections.append(f"## Current User Message\n{user_message}")
 
-        return [
-            ProviderMessage(role="system", content=system_content),
-            ProviderMessage(role="user", content="\n\n".join(user_sections)),
-        ]
+        rendered_messages = [ProviderMessage(role="system", content=system_content)]
+        rendered_messages.extend(recent_messages)
+        rendered_messages.append(ProviderMessage(role="user", content="\n\n".join(user_sections)))
+        return rendered_messages
 
     def _render_project_context(self, project_config: ProjectConfig) -> str:
         project_name = project_config.project.name or project_config.project.id

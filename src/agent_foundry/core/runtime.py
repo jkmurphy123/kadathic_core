@@ -10,8 +10,11 @@ from agent_foundry.context.app_context import AppContext
 from agent_foundry.context.manager import ContextManager
 from agent_foundry.core.errors import ConfigurationError
 from agent_foundry.core.models import ChatResponse
+from agent_foundry.memory.manager import MemoryManager
+from agent_foundry.memory.null import NullMemoryManager
 from agent_foundry.providers.base import ProviderChatRequest
 from agent_foundry.providers.registry import ProviderRegistry
+from agent_foundry.storage.sqlite import SQLiteSessionStore
 
 
 class AgentRuntime:
@@ -24,11 +27,15 @@ class AgentRuntime:
         agent_registry: AgentRegistry,
         provider_registry: ProviderRegistry,
         context_manager: ContextManager | None = None,
+        memory_manager: MemoryManager | NullMemoryManager | None = None,
     ) -> None:
         self.project_config = project_config
         self.agent_registry = agent_registry
         self.provider_registry = provider_registry
         self.context_manager = context_manager or ContextManager()
+        self.memory_manager = memory_manager or MemoryManager(
+            SQLiteSessionStore(project_config.resolved_storage_path())
+        )
 
     @classmethod
     def from_project_config(cls, config_path: Path | str) -> "AgentRuntime":
@@ -62,6 +69,13 @@ class AgentRuntime:
         agent = self.agent_registry.get(agent_id)
         provider_id = self._provider_id_for_agent(agent)
         provider = self.provider_registry.get(provider_id)
+        recent_messages = self.memory_manager.load_recent_messages(
+            project_id=project_id,
+            agent_id=agent_id,
+            session_id=session_id,
+            user_id=user_id,
+            limit=self.project_config.context_policy.max_recent_messages,
+        )
         capsule = self.context_manager.assemble(
             project_config=self.project_config,
             agent=agent,
@@ -70,6 +84,7 @@ class AgentRuntime:
             user_id=user_id,
             user_message=user_message,
             app_context=app_context,
+            recent_messages=recent_messages,
         )
         provider_response = provider.chat(
             ProviderChatRequest(
@@ -78,6 +93,24 @@ class AgentRuntime:
                 temperature=agent.temperature,
                 metadata={"context_capsule_id": capsule.id},
             )
+        )
+        self.memory_manager.save_message(
+            project_id=project_id,
+            agent_id=agent.id,
+            session_id=session_id,
+            user_id=user_id,
+            role="user",
+            content=user_message,
+            context_capsule_id=capsule.id,
+        )
+        self.memory_manager.save_message(
+            project_id=project_id,
+            agent_id=agent.id,
+            session_id=session_id,
+            user_id=user_id,
+            role="assistant",
+            content=provider_response.text,
+            context_capsule_id=capsule.id,
         )
 
         return ChatResponse(

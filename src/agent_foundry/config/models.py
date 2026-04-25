@@ -62,3 +62,8 @@ class ProjectConfig(BaseModel):
         """Return agent library paths resolved relative to the config file."""
 
         return [(self.source_dir / library).resolve() for library in self.agent_libraries]
+
+    def resolved_storage_path(self) -> Path:
+        """Return storage path resolved relative to the config file."""
+
+        return (self.source_dir / self.storage.path).resolve()

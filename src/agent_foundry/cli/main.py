@@ -18,14 +18,17 @@ from agent_foundry.context.policy import ContextPolicy
 from agent_foundry.core.errors import AgentFoundryError
 from agent_foundry.core.runtime import AgentRuntime
 from agent_foundry.providers.registry import ProviderRegistry
+from agent_foundry.storage.sqlite import SQLiteSessionStore
 
 app = typer.Typer(help="Agent Foundry backend CLI.")
 agents_app = typer.Typer(help="Inspect reusable agents.")
 providers_app = typer.Typer(help="Inspect configured providers.")
 context_app = typer.Typer(help="Preview assembled context.")
+sessions_app = typer.Typer(help="Inspect stored sessions.")
 app.add_typer(agents_app, name="agents")
 app.add_typer(providers_app, name="providers")
 app.add_typer(context_app, name="context")
+app.add_typer(sessions_app, name="sessions")
 console = Console(width=160)
 
 
@@ -74,6 +77,10 @@ def _load_provider_registry() -> ProviderRegistry:
 
 def _load_runtime() -> AgentRuntime:
     return AgentRuntime.from_project_config(state.config_path)
+
+
+def _load_session_store() -> SQLiteSessionStore:
+    return SQLiteSessionStore(_load_config().resolved_storage_path())
 
 
 @agents_app.command("list")
@@ -297,6 +304,75 @@ def preview_context(
                 title=f"Rendered Message {index}: {rendered_message.role}",
             )
         )
+
+
+@sessions_app.command("list")
+def list_sessions() -> None:
+    """List stored chat sessions."""
+
+    try:
+        config = _load_config()
+        sessions = _load_session_store().list_sessions(project_id=config.project.id)
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(title="Sessions")
+    table.add_column("Session ID", style="cyan", no_wrap=True)
+    table.add_column("Agent")
+    table.add_column("User")
+    table.add_column("Messages")
+    table.add_column("Updated")
+
+    for session in sessions:
+        table.add_row(
+            session.session_id,
+            session.agent_id,
+            session.user_id,
+            str(session.message_count),
+            session.updated_at.isoformat(timespec="seconds"),
+        )
+
+    console.print(table)
+
+
+@sessions_app.command("show")
+def show_session(
+    session_id: Annotated[str, typer.Argument(help="Session id to show.")],
+    agent_id: Annotated[
+        str | None,
+        typer.Option("--agent-id", help="Optional agent id filter."),
+    ] = None,
+    user_id: Annotated[
+        str | None,
+        typer.Option("--user-id", help="Optional user id filter."),
+    ] = None,
+) -> None:
+    """Show transcript messages for a session."""
+
+    try:
+        config = _load_config()
+        messages = _load_session_store().load_session_messages(
+            project_id=config.project.id,
+            agent_id=agent_id,
+            session_id=session_id,
+            user_id=user_id,
+        )
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    if not messages:
+        console.print(f"No messages found for session: {session_id}")
+        return
+
+    for message in messages:
+        title = (
+            f"{message.role} | {message.agent_id} | "
+            f"{message.created_at.isoformat(timespec='seconds')}"
+        )
+        console.print(f"[bold]{title}[/bold]")
+        console.print(message.content, markup=False)
 
 
 if __name__ == "__main__":

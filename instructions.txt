@@ -24,3 +24,9 @@ agentfoundry --config examples/sample_project/agentfoundry.yaml agents list
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat_companion
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers health
+
+
+#ollama Setup
+open cli
+ollama list
+ollama run qwen2.5-coder:7b-instruct
