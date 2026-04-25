@@ -16,9 +16,9 @@ providers:
 
   openai_compatible:
     type: openai_compatible
-    base_url: https://api.example.test
+    base_url: https://api.openai.com
     api_key_env: AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY
-    model: example-chat-model
+    model: gpt-4o-mini
 
 agent_libraries:
   - ../agents

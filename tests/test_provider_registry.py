@@ -39,9 +39,9 @@ def test_provider_registry_loads_openai_compatible_from_project_config() -> None
 
     assert isinstance(provider, OpenAICompatibleProvider)
     assert provider.id == "openai_compatible"
-    assert provider.base_url == "https://api.example.test"
+    assert provider.base_url == "https://api.openai.com"
     assert provider.api_key_env == "AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY"
-    assert provider.model == "example-chat-model"
+    assert provider.model == "gpt-4o-mini"
 
 
 def test_provider_registry_rejects_duplicate_ids() -> None:
