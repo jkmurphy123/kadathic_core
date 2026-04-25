@@ -16,6 +16,7 @@ from agent_foundry.context.app_context import AppContext
 from agent_foundry.context.manager import ContextManager
 from agent_foundry.context.policy import ContextPolicy
 from agent_foundry.core.errors import AgentFoundryError
+from agent_foundry.core.runtime import AgentRuntime
 from agent_foundry.providers.registry import ProviderRegistry
 
 app = typer.Typer(help="Agent Foundry backend CLI.")
@@ -69,6 +70,10 @@ def _load_agent_registry() -> AgentRegistry:
 
 def _load_provider_registry() -> ProviderRegistry:
     return ProviderRegistry.from_project_config(_load_config())
+
+
+def _load_runtime() -> AgentRuntime:
+    return AgentRuntime.from_project_config(state.config_path)
 
 
 @agents_app.command("list")
@@ -161,6 +166,62 @@ def provider_health() -> None:
         table.add_row(health.provider_id, healthy, health.model or "", health.message)
 
     console.print(table)
+
+
+@app.command("chat")
+def chat(
+    agent_id: Annotated[str, typer.Argument(help="Agent id to chat with.")],
+    message: Annotated[
+        str | None,
+        typer.Option("--message", "-m", help="Message to send. Prompts when omitted."),
+    ] = None,
+    session_id: Annotated[
+        str,
+        typer.Option("--session-id", help="Session id for this chat turn."),
+    ] = "cli-session",
+    user_id: Annotated[
+        str,
+        typer.Option("--user-id", help="User id for this chat turn."),
+    ] = "cli-user",
+    app_id: Annotated[
+        str,
+        typer.Option("--app-id", help="App id for generated context."),
+    ] = "cli_chat",
+    app_type: Annotated[
+        str,
+        typer.Option("--app-type", help="App type for generated context."),
+    ] = "chatbot",
+    state_summary: Annotated[
+        str,
+        typer.Option("--state-summary", help="State summary for generated context."),
+    ] = "No special app state. This is a CLI chat turn.",
+) -> None:
+    """Send one chat turn to an agent."""
+
+    user_message = message if message is not None else typer.prompt("Message")
+
+    try:
+        config = _load_config()
+        runtime = _load_runtime()
+        response = runtime.chat(
+            agent_id=agent_id,
+            project_id=config.project.id,
+            session_id=session_id,
+            user_id=user_id,
+            user_message=user_message,
+            app_context=AppContext.simple(
+                app_id=app_id,
+                app_type=app_type,
+                state_summary=state_summary,
+            ),
+        )
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(f"[bold]{agent_id}[/bold] via {response.provider_id}:")
+    console.print(response.text, markup=False)
+    console.print(f"Context capsule: {response.context_capsule_id}")
 
 
 @context_app.command("preview")

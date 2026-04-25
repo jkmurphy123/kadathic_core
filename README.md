@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 3: app context and inspectable context capsules.
+Milestone 4: runtime chat with the mock provider.
 
 ## Current Features
 
@@ -18,12 +18,15 @@ Milestone 3: app context and inspectable context capsules.
 - `AppContext` model for frontend-provided app state.
 - Markdown rendering for app context.
 - Inspectable `ContextCapsule` assembly.
+- `AgentRuntime.from_project_config(...)`.
+- End-to-end `runtime.chat(...)` with the deterministic mock provider.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
   - `agentfoundry providers list`
   - `agentfoundry providers health`
   - `agentfoundry context preview AGENT_ID --message "Hello"`
+  - `agentfoundry chat AGENT_ID --message "Hello"`
 
 ## Install
 
@@ -39,6 +42,7 @@ agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers health
 agentfoundry --config examples/sample_project/agentfoundry.yaml context preview chat_companion --message "Hello"
+agentfoundry --config examples/sample_project/agentfoundry.yaml chat chat_companion --message "Hello"
 ```
 
 ## Agent Definition
@@ -58,7 +62,7 @@ temperature: 0.4
 ## Python Usage
 
 ```python
-from agent_foundry import AgentRegistry
+from agent_foundry import AgentRegistry, AgentRuntime
 from agent_foundry.config import load_project_config
 from agent_foundry.context import AppContext, ContextManager
 from agent_foundry.providers import ProviderRegistry
@@ -86,6 +90,21 @@ capsule = ContextManager().assemble(
     ),
 )
 print(capsule.rendered_messages[-1].content)
+
+runtime = AgentRuntime.from_project_config("examples/sample_project/agentfoundry.yaml")
+response = runtime.chat(
+    agent_id="chat_companion",
+    project_id="demo_project",
+    session_id="demo-session",
+    user_id="local-user",
+    user_message="Hello",
+    app_context=AppContext.simple(
+        app_id="plain_chat",
+        app_type="chatbot",
+        state_summary="No special app state.",
+    ),
+)
+print(response.text)
 ```
 
 ## Tests
@@ -96,5 +115,5 @@ pytest
 
 ## Roadmap
 
-Milestone 4 will add `AgentRuntime`, provider-neutral runtime chat, and the
-interactive `chat` CLI command. SQLite memory follows in Milestone 5.
+Milestone 5 will add SQLite transcript storage, recent-message loading, session
+listing, and session inspection.

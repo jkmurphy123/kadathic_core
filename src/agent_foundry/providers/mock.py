@@ -19,6 +19,7 @@ class MockProvider:
 
         user_messages = [message.content for message in request.messages if message.role == "user"]
         latest_user_message = user_messages[-1] if user_messages else ""
+        latest_user_message = _extract_current_user_message(latest_user_message)
         model = request.model or self.model
         return ProviderChatResponse(
             text=f"[mock:{self.id}] {latest_user_message}",
@@ -36,3 +37,10 @@ class MockProvider:
             message="Mock provider is available.",
             model=self.model,
         )
+
+
+def _extract_current_user_message(content: str) -> str:
+    marker = "## Current User Message"
+    if marker not in content:
+        return content
+    return content.split(marker, maxsplit=1)[1].strip()

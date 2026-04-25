@@ -29,6 +29,7 @@ class ContextManager:
         *,
         project_config: ProjectConfig,
         agent: AgentDefinition,
+        project_id: str | None = None,
         session_id: str,
         user_id: str,
         user_message: str,
@@ -44,10 +45,11 @@ class ContextManager:
             user_message=user_message,
             app_context=app_context if effective_policy.include_app_context else None,
         )
+        effective_project_id = project_id or project_config.project.id
 
         return ContextCapsule(
             user_id=user_id,
-            project_id=project_config.project.id,
+            project_id=effective_project_id,
             agent_id=agent.id,
             session_id=session_id,
             system_instructions=self.system_instructions,
@@ -56,7 +58,10 @@ class ContextManager:
             app_context=app_context if effective_policy.include_app_context else None,
             current_user_message=user_message,
             rendered_messages=rendered_messages,
-            metadata={"context_policy": effective_policy.model_dump()},
+            metadata={
+                "context_policy": effective_policy.model_dump(),
+                "configured_project_id": project_config.project.id,
+            },
         )
 
     def _policy_from_config(
