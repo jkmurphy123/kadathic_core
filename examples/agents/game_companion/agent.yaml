@@ -1,0 +1,12 @@
+id: game_companion
+name: Game Companion
+version: 0.1.0
+description: Helps players reason about game state without inventing facts.
+personality_file: personality.md
+default_provider: mock
+temperature: 0.5
+memory:
+  enabled: true
+  default_scope: session
+context_policy:
+  include_app_context: true

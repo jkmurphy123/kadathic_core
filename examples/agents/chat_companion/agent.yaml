@@ -1,0 +1,12 @@
+id: chat_companion
+name: Chat Companion
+version: 0.1.0
+description: A simple companion for general chat.
+personality_file: personality.md
+default_provider: mock
+temperature: 0.4
+memory:
+  enabled: true
+  default_scope: session
+context_policy:
+  include_app_context: false

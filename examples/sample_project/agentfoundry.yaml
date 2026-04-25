@@ -1,0 +1,26 @@
+project:
+  id: demo_project
+  name: Demo Project
+
+default_provider: mock
+
+providers:
+  mock:
+    type: mock
+    model: mock-model
+
+agent_libraries:
+  - ../agents
+
+enabled_agents:
+  - chat_companion
+  - quiz_tutor
+  - game_companion
+
+storage:
+  path: .agentfoundry/agent_foundry.sqlite
+
+context_policy:
+  include_app_context: true
+  max_recent_messages: 12
+  app_context_position: before_user_message
