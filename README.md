@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 2: project configuration and provider registry.
+Milestone 3: app context and inspectable context capsules.
 
 ## Current Features
 
@@ -15,11 +15,15 @@ Milestone 2: project configuration and provider registry.
 - Project config loading from `agentfoundry.yaml`.
 - Provider registry.
 - Deterministic mock provider.
+- `AppContext` model for frontend-provided app state.
+- Markdown rendering for app context.
+- Inspectable `ContextCapsule` assembly.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
   - `agentfoundry providers list`
   - `agentfoundry providers health`
+  - `agentfoundry context preview AGENT_ID --message "Hello"`
 
 ## Install
 
@@ -34,6 +38,7 @@ agentfoundry --config examples/sample_project/agentfoundry.yaml agents list
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat_companion
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers health
+agentfoundry --config examples/sample_project/agentfoundry.yaml context preview chat_companion --message "Hello"
 ```
 
 ## Agent Definition
@@ -55,6 +60,7 @@ temperature: 0.4
 ```python
 from agent_foundry import AgentRegistry
 from agent_foundry.config import load_project_config
+from agent_foundry.context import AppContext, ContextManager
 from agent_foundry.providers import ProviderRegistry
 
 config = load_project_config("examples/sample_project/agentfoundry.yaml")
@@ -66,6 +72,20 @@ print(agent.name)
 provider_registry = ProviderRegistry.from_project_config(config)
 provider = provider_registry.get(config.default_provider)
 print(provider.health_check().message)
+
+capsule = ContextManager().assemble(
+    project_config=config,
+    agent=agent,
+    session_id="demo-session",
+    user_id="local-user",
+    user_message="Hello",
+    app_context=AppContext.simple(
+        app_id="plain_chat",
+        app_type="chatbot",
+        state_summary="No special app state.",
+    ),
+)
+print(capsule.rendered_messages[-1].content)
 ```
 
 ## Tests
@@ -76,6 +96,5 @@ pytest
 
 ## Roadmap
 
-Milestone 3 will add `AppContext`, context policy models, context capsule assembly,
-and context preview support. Runtime chat and SQLite memory follow in later
-milestones.
+Milestone 4 will add `AgentRuntime`, provider-neutral runtime chat, and the
+interactive `chat` CLI command. SQLite memory follows in Milestone 5.

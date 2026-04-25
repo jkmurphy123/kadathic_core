@@ -5,19 +5,26 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
 from rich.table import Table
 
 from agent_foundry.agents.registry import AgentRegistry
 from agent_foundry.config.loader import load_project_config
 from agent_foundry.config.models import ProjectConfig
+from agent_foundry.context.app_context import AppContext
+from agent_foundry.context.manager import ContextManager
+from agent_foundry.context.policy import ContextPolicy
 from agent_foundry.core.errors import AgentFoundryError
 from agent_foundry.providers.registry import ProviderRegistry
 
 app = typer.Typer(help="Agent Foundry backend CLI.")
 agents_app = typer.Typer(help="Inspect reusable agents.")
 providers_app = typer.Typer(help="Inspect configured providers.")
+context_app = typer.Typer(help="Preview assembled context.")
 app.add_typer(agents_app, name="agents")
 app.add_typer(providers_app, name="providers")
+app.add_typer(context_app, name="context")
 console = Console(width=160)
 
 
@@ -154,6 +161,81 @@ def provider_health() -> None:
         table.add_row(health.provider_id, healthy, health.model or "", health.message)
 
     console.print(table)
+
+
+@context_app.command("preview")
+def preview_context(
+    agent_id: Annotated[str, typer.Argument(help="Agent id to preview.")],
+    message: Annotated[
+        str,
+        typer.Option("--message", "-m", help="Current user message."),
+    ] = "Hello",
+    session_id: Annotated[
+        str,
+        typer.Option("--session-id", help="Session id for the preview capsule."),
+    ] = "preview-session",
+    user_id: Annotated[
+        str,
+        typer.Option("--user-id", help="User id for the preview capsule."),
+    ] = "preview-user",
+    app_id: Annotated[
+        str,
+        typer.Option("--app-id", help="App id for generated preview context."),
+    ] = "preview_app",
+    app_type: Annotated[
+        str,
+        typer.Option("--app-type", help="App type for generated preview context."),
+    ] = "chatbot",
+    state_summary: Annotated[
+        str,
+        typer.Option("--state-summary", help="State summary for generated preview context."),
+    ] = "No special app state. This is a context preview.",
+) -> None:
+    """Preview the context capsule that would be sent to a provider."""
+
+    try:
+        config = _load_config()
+        agent = _load_agent_registry().get(agent_id)
+        app_context = AppContext.simple(
+            app_id=app_id,
+            app_type=app_type,
+            state_summary=state_summary,
+        )
+        capsule = ContextManager().assemble(
+            project_config=config,
+            agent=agent,
+            session_id=session_id,
+            user_id=user_id,
+            user_message=message,
+            app_context=app_context,
+            policy=ContextPolicy(
+                include_app_context=True,
+                max_recent_messages=config.context_policy.max_recent_messages,
+                app_context_position=config.context_policy.app_context_position,
+            ),
+        )
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    console.print(
+        Panel(
+            f"Capsule ID: {capsule.id}\n"
+            f"Project: {capsule.project_id}\n"
+            f"Agent: {capsule.agent_id}\n"
+            f"Session: {capsule.session_id}\n"
+            f"User: {capsule.user_id}",
+            title="Context Capsule",
+        )
+    )
+
+    for index, rendered_message in enumerate(capsule.rendered_messages, start=1):
+        console.print(
+            Panel(
+                Markdown(rendered_message.content),
+                title=f"Rendered Message {index}: {rendered_message.role}",
+            )
+        )
 
 
 if __name__ == "__main__":
