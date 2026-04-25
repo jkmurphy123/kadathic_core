@@ -18,8 +18,9 @@ class ProviderConfig(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    type: Literal["mock"]
+    type: Literal["mock", "ollama"]
     model: str | None = None
+    base_url: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 

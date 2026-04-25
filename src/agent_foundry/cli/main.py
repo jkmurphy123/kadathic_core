@@ -17,6 +17,7 @@ from agent_foundry.context.manager import ContextManager
 from agent_foundry.context.policy import ContextPolicy
 from agent_foundry.core.errors import AgentFoundryError
 from agent_foundry.core.runtime import AgentRuntime
+from agent_foundry.providers.base import ProviderChatRequest, ProviderMessage
 from agent_foundry.providers.registry import ProviderRegistry
 from agent_foundry.storage.sqlite import SQLiteSessionStore
 
@@ -173,6 +174,47 @@ def provider_health() -> None:
         table.add_row(health.provider_id, healthy, health.model or "", health.message)
 
     console.print(table)
+
+
+@providers_app.command("smoke")
+def provider_smoke(
+    provider_id: Annotated[
+        str | None,
+        typer.Argument(help="Provider id to test. Defaults to project default provider."),
+    ] = None,
+    prompt: Annotated[
+        str,
+        typer.Option("--prompt", "-p", help="Prompt to send to the provider."),
+    ] = "Reply with exactly one word: pong",
+) -> None:
+    """Send a real chat request through a configured provider."""
+
+    try:
+        config = _load_config()
+        registry = ProviderRegistry.from_project_config(config)
+        resolved_provider_id = provider_id or config.default_provider
+        provider = registry.get(resolved_provider_id)
+        provider_config = config.providers[resolved_provider_id]
+        response = provider.chat(
+            ProviderChatRequest(
+                messages=[ProviderMessage(role="user", content=prompt)],
+                model=provider_config.model,
+                temperature=0.0,
+            )
+        )
+    except AgentFoundryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        console.print(f"[red]Provider smoke test failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    if not response.text.strip():
+        console.print("[red]Provider returned an empty response.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold]{resolved_provider_id}[/bold] processed the prompt.")
+    console.print(response.text, markup=False)
 
 
 @app.command("chat")

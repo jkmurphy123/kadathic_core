@@ -6,6 +6,7 @@ from agent_foundry.config.models import ProjectConfig, ProviderConfig
 from agent_foundry.core.errors import ConfigurationError
 from agent_foundry.providers.base import ProviderAdapter
 from agent_foundry.providers.mock import MockProvider
+from agent_foundry.providers.ollama import OllamaProvider
 
 
 class ProviderRegistry:
@@ -56,5 +57,13 @@ def build_provider(provider_id: str, config: ProviderConfig) -> ProviderAdapter:
 
     if config.type == "mock":
         return MockProvider(provider_id=provider_id, model=config.model or "mock-model")
+    if config.type == "ollama":
+        if not config.model:
+            raise ConfigurationError(f"Ollama provider '{provider_id}' requires a model.")
+        return OllamaProvider(
+            provider_id=provider_id,
+            base_url=config.base_url or "http://localhost:11434",
+            model=config.model,
+        )
 
     raise ConfigurationError(f"Unsupported provider type: {config.type}")

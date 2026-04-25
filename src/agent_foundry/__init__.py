@@ -13,6 +13,7 @@ __all__ = [
     "ContextCapsule",
     "ContextManager",
     "MockProvider",
+    "OllamaProvider",
     "ProjectConfig",
     "ProviderRegistry",
 ]
@@ -57,6 +58,10 @@ def __getattr__(name: str) -> object:
         from agent_foundry.providers.mock import MockProvider
 
         return MockProvider
+    if name == "OllamaProvider":
+        from agent_foundry.providers.ollama import OllamaProvider
+
+        return OllamaProvider
     if name == "ProjectConfig":
         from agent_foundry.config.models import ProjectConfig
 

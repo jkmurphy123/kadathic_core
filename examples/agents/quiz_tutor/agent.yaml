@@ -3,7 +3,6 @@ name: Quiz Tutor
 version: 0.1.0
 description: Gives hints and explanations for quiz questions.
 personality_file: personality.md
-default_provider: mock
 temperature: 0.3
 memory:
   enabled: true

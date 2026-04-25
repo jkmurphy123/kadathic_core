@@ -2,7 +2,7 @@
 
 Agent Foundry is a backend-first Python framework for defining, loading, and later
 running reusable AI agents across applications. This repository currently implements
-Milestone 5: SQLite session memory.
+Milestone 6: Ollama provider.
 
 ## Current Features
 
@@ -23,6 +23,9 @@ Milestone 5: SQLite session memory.
 - SQLite transcript storage.
 - Recent session messages included in later context capsules.
 - Session listing and transcript inspection.
+- Ollama `/api/chat` provider support.
+- Graceful Ollama server reachability checks through `providers health`.
+- Provider smoke tests that send a real prompt through `providers smoke`.
 - Typer CLI commands:
   - `agentfoundry agents list`
   - `agentfoundry agents show AGENT_ID`
@@ -46,6 +49,7 @@ agentfoundry --config examples/sample_project/agentfoundry.yaml agents list
 agentfoundry --config examples/sample_project/agentfoundry.yaml agents show chat_companion
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers list
 agentfoundry --config examples/sample_project/agentfoundry.yaml providers health
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers smoke ollama_local --prompt "Reply with exactly one word: pong"
 agentfoundry --config examples/sample_project/agentfoundry.yaml context preview chat_companion --message "Hello"
 agentfoundry --config examples/sample_project/agentfoundry.yaml chat chat_companion --message "Hello"
 agentfoundry --config examples/sample_project/agentfoundry.yaml sessions list
@@ -119,6 +123,36 @@ database configured by `storage.path` in `agentfoundry.yaml`. On later turns in 
 same `project_id`, `agent_id`, `session_id`, and `user_id`, recent transcript messages
 are loaded and included in the next context capsule.
 
+## Ollama Provider
+
+Add an Ollama provider to `agentfoundry.yaml`:
+
+```yaml
+providers:
+  ollama_local:
+    type: ollama
+    base_url: http://localhost:11434
+    model: qwen2.5-coder:7b
+```
+
+Agents can opt into it with:
+
+```yaml
+default_provider: ollama_local
+```
+
+`agentfoundry providers health` checks whether the Ollama server answers `/api/tags`.
+That confirms the server is reachable, not that the configured model can generate.
+Use this to send a real `/api/chat` prompt:
+
+```bash
+agentfoundry --config examples/sample_project/agentfoundry.yaml providers smoke ollama_local --prompt "Reply with exactly one word: pong"
+```
+
+If Ollama is not running, `providers health` reports an unavailable provider instead
+of crashing. If the server is reachable but the model is missing or cannot generate,
+`providers smoke` fails with the provider error.
+
 ## Tests
 
 ```bash
@@ -127,5 +161,5 @@ pytest
 
 ## Roadmap
 
-Milestone 6 will add Ollama `/api/chat` support with graceful health checks and mocked
-HTTP tests.
+Milestone 7 will add an OpenAI-compatible `/v1/chat/completions` provider with API key
+environment handling and mocked HTTP tests.

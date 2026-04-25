@@ -10,7 +10,7 @@ def test_loads_sample_project_config() -> None:
     config = load_project_config("examples/sample_project/agentfoundry.yaml")
 
     assert config.project.id == "demo_project"
-    assert config.default_provider == "mock"
+    assert config.default_provider == "ollama_local"
     assert config.providers["mock"].type == "mock"
     assert config.providers["mock"].model == "mock-model"
     assert config.resolved_agent_libraries() == [

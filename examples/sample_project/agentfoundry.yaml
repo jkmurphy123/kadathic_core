@@ -2,12 +2,17 @@ project:
   id: demo_project
   name: Demo Project
 
-default_provider: mock
+default_provider: ollama_local
 
 providers:
   mock:
     type: mock
     model: mock-model
+
+  ollama_local:
+    type: ollama
+    base_url: http://localhost:11434
+    model: qwen2.5-coder:7b-instruct
 
 agent_libraries:
   - ../agents
