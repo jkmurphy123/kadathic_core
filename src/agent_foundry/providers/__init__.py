@@ -6,12 +6,14 @@ from agent_foundry.providers.base import (
     ProviderChatResponse,
     ProviderHealth,
 )
+from agent_foundry.providers.deepseek import DeepSeekProvider
 from agent_foundry.providers.mock import MockProvider
 from agent_foundry.providers.ollama import OllamaProvider
 from agent_foundry.providers.openai_compatible import OpenAICompatibleProvider
 from agent_foundry.providers.registry import ProviderRegistry
 
 __all__ = [
+    "DeepSeekProvider",
     "MockProvider",
     "OllamaProvider",
     "OpenAICompatibleProvider",

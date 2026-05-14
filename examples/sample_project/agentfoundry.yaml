@@ -20,6 +20,10 @@ providers:
     api_key_env: AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY
     model: gpt-4o-mini
 
+  deepseek:
+    type: deepseek
+    model: deepseek-chat
+
 agent_libraries:
   - ../agents
 

@@ -185,6 +185,33 @@ $env:AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY = "..."
 `providers smoke openai_compatible --prompt "Hello"` sends a real chat completion
 request.
 
+## DeepSeek Provider
+
+Add a DeepSeek provider to `agentfoundry.yaml` with sensible defaults:
+
+```yaml
+providers:
+  deepseek:
+    type: deepseek
+    model: deepseek-chat
+```
+
+The `base_url` defaults to `https://api.deepseek.com` and `api_key_env` defaults
+to `DEEPSEEK_API_KEY`, so a minimal config only needs `type` and `model`.
+
+Set your API key before using the provider:
+
+```bash
+export DEEPSEEK_API_KEY="sk-..."
+```
+
+Available models include `deepseek-chat` (DeepSeek-V3) and `deepseek-reasoner`
+(DeepSeek-R1).
+
+`providers health` checks that the API key environment variable is present.
+`providers smoke deepseek --prompt "Hello"` sends a real chat completion
+request.
+
 ## Example Consumers
 
 These scripts show how non-GUI frontend apps call the backend. They default to the

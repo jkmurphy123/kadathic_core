@@ -18,7 +18,7 @@ class ProviderConfig(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    type: Literal["mock", "ollama", "openai_compatible"]
+    type: Literal["mock", "ollama", "openai_compatible", "deepseek"]
     model: str | None = None
     base_url: str | None = None
     api_key_env: str | None = None

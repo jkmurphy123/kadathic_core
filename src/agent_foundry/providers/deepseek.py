@@ -1,4 +1,4 @@
-"""OpenAI-compatible chat completions provider adapter."""
+"""DeepSeek chat completions provider adapter."""
 
 import os
 from typing import Any
@@ -14,28 +14,35 @@ from agent_foundry.providers.base import (
 )
 
 
-class OpenAICompatibleProvider:
-    """Provider adapter for `/v1/chat/completions` compatible APIs."""
+class DeepSeekProvider:
+    """Provider adapter for the DeepSeek API (OpenAI-compatible).
+
+    Sensible defaults mean a minimal config only needs ``type: deepseek``.
+    """
+
+    DEFAULT_BASE_URL = "https://api.deepseek.com"
+    DEFAULT_API_KEY_ENV = "DEEPSEEK_API_KEY"
+    DEFAULT_MODEL = "deepseek-chat"
 
     def __init__(
         self,
         *,
         provider_id: str,
-        base_url: str,
-        api_key_env: str,
-        model: str,
+        base_url: str | None = None,
+        api_key_env: str | None = None,
+        model: str | None = None,
         timeout: float = 30.0,
         client: httpx.Client | None = None,
     ) -> None:
         self.id = provider_id
-        self.base_url = base_url.rstrip("/")
-        self.api_key_env = api_key_env
-        self.model = model
+        self.base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
+        self.api_key_env = api_key_env or self.DEFAULT_API_KEY_ENV
+        self.model = model or self.DEFAULT_MODEL
         self.timeout = timeout
         self._client = client
 
     def chat(self, request: ProviderChatRequest) -> ProviderChatResponse:
-        """Call a `/v1/chat/completions` compatible endpoint."""
+        """Call the DeepSeek `/v1/chat/completions` endpoint."""
 
         model = request.model or self.model
         payload: dict[str, Any] = {

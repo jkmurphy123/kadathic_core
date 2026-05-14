@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from agent_foundry.config.models import ProjectConfig, ProviderConfig
 from agent_foundry.core.errors import ConfigurationError
 from agent_foundry.providers.base import ProviderAdapter
+from agent_foundry.providers.deepseek import DeepSeekProvider
 from agent_foundry.providers.mock import MockProvider
 from agent_foundry.providers.ollama import OllamaProvider
 from agent_foundry.providers.openai_compatible import OpenAICompatibleProvider
@@ -84,6 +85,13 @@ def build_provider(provider_id: str, config: ProviderConfig) -> ProviderAdapter:
             base_url=config.base_url,
             api_key_env=config.api_key_env,
             model=config.model,
+        )
+    if config.type == "deepseek":
+        return DeepSeekProvider(
+            provider_id=provider_id,
+            base_url=config.base_url or DeepSeekProvider.DEFAULT_BASE_URL,
+            api_key_env=config.api_key_env or DeepSeekProvider.DEFAULT_API_KEY_ENV,
+            model=config.model or DeepSeekProvider.DEFAULT_MODEL,
         )
 
     raise ConfigurationError(f"Unsupported provider type: {config.type}")

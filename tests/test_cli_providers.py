@@ -15,6 +15,7 @@ def test_providers_list_sample_project() -> None:
     assert "mock" in result.stdout
     assert "ollama_local" in result.stdout
     assert "openai_compatible" in result.stdout
+    assert "deepseek" in result.stdout
     assert "mock-model" in result.stdout
     assert "yes" in result.stdout
 
@@ -30,6 +31,8 @@ def test_providers_health_sample_project() -> None:
     assert "Mock provider is available." in result.stdout
     assert "openai_compatible" in result.stdout
     assert "Set environment variable AGENT_FOUNDRY_OPENAI_COMPATIBLE_KEY" in result.stdout
+    assert "deepseek" in result.stdout
+    assert "DEEPSEEK_API_KEY" in result.stdout
 
 
 def test_providers_smoke_with_mock_provider() -> None:
